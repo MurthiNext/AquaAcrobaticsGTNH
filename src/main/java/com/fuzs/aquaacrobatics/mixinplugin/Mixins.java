@@ -42,6 +42,7 @@ public enum Mixins {
             "minecraft.client.ModelBipedMixin",
             "minecraft.client.RenderBoatMixin",
             "minecraft.client.RenderPlayerMixin",
+            "minecraft.client.RenderManagerMixin",
             "minecraft.client.EntityOtherPlayerMPMixin",
             "minecraft.client.PlayerControllerMPMixin")),
 

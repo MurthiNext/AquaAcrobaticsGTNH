@@ -209,7 +209,10 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer implement
         return StreamSupport.stream(new AxisAlignedBBSpliterator(world, entity, aabb), false);
     }
 
-    @Redirect(method = "func_145771_j", at = @At(value = "INVOKE", target = "java/lang/Math.round(F)I"))
+    // PlayerAPI 会把原方法体重命名为 localPushOutOfBlocks，需要同时注入两者（参照 1.12 上游修复）
+    @Redirect(
+        method = { "func_145771_j", "localPushOutOfBlocks" },
+        at = @At(value = "INVOKE", target = "java/lang/Math.round(F)I"))
     private int round(float a) {
 
         if (ConfigHandler.playerBlockCollisions == ConfigHandler.PlayerBlockCollisions.APPROXIMATE) {
@@ -375,7 +378,10 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer implement
             boolean hasCollided = isNotMoving || this.isInWater() && !this.canSwim() && !this.movementStorage.isFlying;
             if (((IPlayerResizeable) this).isSwimming()) {
 
-                if (!this.movementInput.sneak && isNotMoving || !this.isInWater()) {
+                // 1.13 起松开移动键后仍会保持泳姿滑行，只有水平速度归零（或无法继续冲刺）时才退出
+                boolean stopped = this.motionX * this.motionX + this.motionZ * this.motionZ < 1.0E-4D;
+                if (!this.isInWater() || !isSaturated
+                    || (!this.movementInput.sneak && isNotMoving && stopped)) {
 
                     this.setSprinting(false);
                 }

@@ -46,8 +46,9 @@ public abstract class ModelBipedMixin extends ModelBase implements IModelBipedSw
     @Unique
     public float swimAnimation;
 
+    // ModelPlayerAPI 会把原方法体重命名为 localRender，需要同时注入两者（参照 1.12 上游修复）
     @Redirect(
-        method = "render",
+        method = { "render", "localRender" },
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
@@ -79,8 +80,9 @@ public abstract class ModelBipedMixin extends ModelBase implements IModelBipedSw
             .setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
     }
 
+    // ModelPlayerAPI 会把原方法体重命名为 localSetRotationAngles，需要同时注入两者（参照 1.12 上游修复）
     @Inject(
-        method = "setRotationAngles",
+        method = { "setRotationAngles", "localSetRotationAngles" },
         at = @At(value = "FIELD", target = "net/minecraft/client/model/ModelBiped.onGround:F", ordinal = 0))
     public void setRotationAnglesPre(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
         float headPitch, float scaleFactor, Entity entityIn, CallbackInfo callbackInfo) {

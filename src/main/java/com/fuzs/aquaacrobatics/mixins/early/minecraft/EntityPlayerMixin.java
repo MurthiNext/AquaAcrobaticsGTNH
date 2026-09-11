@@ -22,6 +22,7 @@ import net.minecraftforge.fluids.IFluidBlock;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -237,14 +238,16 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
     protected void recalculateSize(EntitySize oldSize, EntitySize newSize) {
         if (newSize.width < oldSize.width) {
 
+            // 1.7.10 本地玩家的 posY 是眼睛高度，箱底应是 posY - yOffset，而不是 posY
             double d0 = (double) newSize.width / 2.0;
+            double d1 = this.posY - (double) this.yOffset + (double) this.ySize;
             this.boundingBox.setBB(
                 AxisAlignedBB.getBoundingBox(
                     this.posX - d0,
-                    this.posY,
+                    d1,
                     this.posZ - d0,
                     this.posX + d0,
-                    this.posY + (double) newSize.height,
+                    d1 + (double) newSize.height,
                     this.posZ + d0));
         } else {
 
@@ -405,6 +408,24 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
         // run after Forge event in case a mod still wants to do changes
         this.updatePose();
         this.updateEyeHeight();
+        this.syncPosYWithBoundingBox();
+    }
+
+    /**
+     * 1.7.10 里本地玩家的 posY 表示眼睛高度，渲染原点与相机都依赖 posY - yOffset。
+     * 如果某些 mod 只改了 yOffset/碰撞箱而没有同步 posY，模型就会脱离碰撞箱（表现为绕头部旋转、贴不到水底）。
+     * 这里在客户端每 tick 强制 posY = box.minY + yOffset，保证渲染、相机和碰撞箱始终一致。
+     */
+    @Unique
+    private void syncPosYWithBoundingBox() {
+        if (this.worldObj == null || !this.worldObj.isRemote || this.isRiding()) {
+            return;
+        }
+
+        double expectedPosY = this.boundingBox.minY + (double) this.yOffset - (double) this.ySize;
+        if (Math.abs(this.posY - expectedPosY) > 1.0E-5D) {
+            this.posY = expectedPosY;
+        }
     }
 
     protected void updatePose() {
