@@ -2,7 +2,9 @@
 
 A Minecraft Mod that brings 1.13+ swimming method back to the 1.7.10, especially for the modpack GregTech: New Horizons.
 This is an unofficial addon now. Hope it won't break the RULES OF STARGATE. (bcuz im trying)
+
 Fixed some bugs because of Player-API.
+
 **☆彡 MurthiNext 彡☆ presents**, this fork.
 
 ## Using in a dev environment (for modders)
