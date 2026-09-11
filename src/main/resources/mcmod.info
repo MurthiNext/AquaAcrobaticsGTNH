@@ -3,5 +3,5 @@
   "name": "${modName}",
   "version": "${modVersion}",
   "mcversion": "${minecraftVersion}",
-  "authorList": ["embeddedt"]
+  "authorList": ["embeddedt", "MurthiNext"]
 }]
