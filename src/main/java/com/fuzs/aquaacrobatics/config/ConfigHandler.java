@@ -99,7 +99,7 @@ public class ConfigHandler {
 
         @Config.Name("Replenish Air Slowly")
         @Config.Comment("Replenish air slowly when out of water instead of immediately.")
-        public static boolean slowAirReplenish = false;
+        public static boolean slowAirReplenish = true;
 
         @Config.Name("Sneaking Dismounts Parrots")
         @Config.Comment("Parrots no longer leave the players shoulders as easily, instead the player needs to press the sneak key.")
