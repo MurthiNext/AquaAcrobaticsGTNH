@@ -17,7 +17,7 @@ public abstract class RenderManagerMixin {
 
     /**
      * 原版 F3+B 用渲染插值位置直接当箱底（玩家 posY 是眼睛高度），Hodgepodge 的修正又硬编码了 -1.62，
-     * 与本 mod 游泳时的 yOffset=0.28 冲突，导致调试箱比玩家低约一格。
+     * 与本 mod 游泳时的 yOffset=0.4 冲突，导致调试箱比玩家低约一格。
      * 这里直接使用实体真实的 boundingBox 叠加上插值位移绘制，保证调试箱与碰撞箱完全一致。
      */
     @Inject(method = "renderDebugBoundingBox", at = @At("HEAD"), cancellable = true)

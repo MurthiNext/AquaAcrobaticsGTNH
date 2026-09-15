@@ -35,23 +35,7 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
 
     }
 
-    @Override
-    public float getDefaultEyeHeight() {
-        // Handle server-side swimming eye height
-        if (((IPlayerResizeable) this).getPose() == Pose.SWIMMING) {
-            return 0.4F; // Fixed server-side swimming eye height
-        }
-        return 1.62F; // Default eye height for other poses
-    }
-
-    @Override
-    public float getEyeHeight() {
-        // Handle server-side swimming eye height for getEyeHeight method too
-        if (((IPlayerResizeable) this).getPose() == Pose.SWIMMING) {
-            return 0.4F; // Fixed server-side swimming eye height
-        }
-        return super.getEyeHeight();
-    }
+    // 服务端泳姿眼睛判定统一由 EntityPlayerMixin#isInsideOfMaterial 修正，故此处删除。
 
     // Inject into onUpdate to ensure size is correct
     @Inject(method = "onUpdate", at = @At("TAIL"))

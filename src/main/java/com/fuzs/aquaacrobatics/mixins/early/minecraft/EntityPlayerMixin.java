@@ -188,6 +188,58 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
         this.eyesInWater = this.isInsideOfMaterial(Material.water);
     }
 
+    /**
+     * 统一两端“眼睛是否处于某种材质（水）中”的判定位置。
+     * 趴姿（游泳/鞘翅/猛冲）眼睛高度取 0.4，与 1.13 的
+     * 泳姿眼睛高度一致，且与客户端相机高度（yOffset=0.4）、视线起点保持统一。
+     * 其余姿态维持原版行为。
+     */
+    @Override
+    public boolean isInsideOfMaterial(Material materialIn) {
+
+        Pose pose = this.getPose();
+        if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+
+            return this.aqua$isEyeInMaterial(materialIn, this.boundingBox.minY + 0.4D);
+        }
+
+        return super.isInsideOfMaterial(materialIn);
+    }
+
+    /**
+     * 复刻原版 Entity#isInsideOfMaterial 的方块/液面判断逻辑，仅把眼睛位置
+     * 由 posY + getEyeHeight() 换成传入的 eyeY（以碰撞箱底部为基准）。
+     */
+    @Unique
+    private boolean aqua$isEyeInMaterial(Material materialIn, double eyeY) {
+
+        int i = MathHelper.floor_double(this.posX);
+        int j = MathHelper.floor_double(eyeY);
+        int k = MathHelper.floor_double(this.posZ);
+        Block block = this.worldObj.getBlock(i, j, k);
+
+        if (block.getMaterial() == materialIn) {
+
+            double filled = 1.0D;
+            if (block instanceof IFluidBlock) {
+
+                filled = ((IFluidBlock) block).getFilledPercentage(this.worldObj, i, j, k);
+            }
+
+            if (filled < 0.0D) {
+
+                filled *= -1.0D;
+                return eyeY > (double) (j + (1.0D - filled));
+            } else {
+
+                return eyeY < (double) (j + filled);
+            }
+        } else {
+
+            return false;
+        }
+    }
+
     @SuppressWarnings("UnusedReturnValue")
     protected boolean updateEyesInWaterPlayer() {
 
@@ -446,7 +498,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
             } else if (this.isForcingCrawling() || this.isSwimming()) {
                 pose = Pose.SWIMMING;
                 if (this.worldObj.isRemote) {
-                    this.yOffset = 0.28F;
+                    // 趴姿（游泳/爬行）的眼睛与相机高度：对齐 1.13 的泳姿眼睛（箱底上方 0.4）。
+                    // 相机高度 = posY（见 EntityRendererMixin），水下视觉判定 = 箱底 + 0.4
+                    // （见 isInsideOfMaterial），三者必须一致，否则贴水面时相机会没入水中。
+                    this.yOffset = 0.4F;
                 }
             } else if (this.isActuallySneaking() && !this.capabilities.isFlying
                 && (this.onGround || !this.isInWater())
@@ -566,7 +621,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
         if (this.isSwimming() && !this.isRiding()) {
             double d3 = this.getLookVec().yCoord;
             double d4 = d3 < -0.2 ? 0.085 : 0.06;
-            Block fluidState = this.worldObj.getBlock((int) this.posX, (int) (this.posY + 1.0 - 0.1), (int) this.posZ);
+            // 1.13 中 posY 即脚底高度，检查“脚底上方 0.9 格”；
+            // 1.7.10 玩家 posY 含 yOffset 偏移（客户端趴姿 0.4、服务端 1.62），
+            // 直接用 posY 会导致检查位置过高，这里改用碰撞箱底部对齐原版语义
+            Block fluidState = this.worldObj.getBlock((int) this.posX, (int) (this.boundingBox.minY + 1.0 - 0.1), (int) this.posZ);
             if (d3 <= 0.0 || this.isJumping || fluidState instanceof BlockLiquid || fluidState instanceof IFluidBlock) {
 
                 double d5 = this.motionY;
