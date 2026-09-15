@@ -254,6 +254,38 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
         }
     }
 
+    /**
+     * 窒息判定（卡墙伤害）同样不能使用原版的 posY + getEyeHeight()：
+     * 玩家 posY 含 yOffset 偏移（客户端趴姿 0.4、服务端恒为站姿 1.62），
+     * 而趴姿箱体只有 0.6 高，服务端会把 1 格高空间的天花板误判为“眼睛卡在方块里”，
+     * 持续施加窒息伤害。
+     * 这里改为以碰撞箱底部 + 姿态眼睛高度推算。
+     */
+    @Override
+    public boolean isEntityInsideOpaqueBlock() {
+
+        Pose pose = this.getPose();
+        double eyeY = this.boundingBox.minY
+            + (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK ? 0.4D : 1.74D);
+
+        for (int i = 0; i < 8; ++i) {
+
+            float f = ((float) ((i >> 0) % 2) - 0.5F) * this.width * 0.8F;
+            float f1 = ((float) ((i >> 1) % 2) - 0.5F) * 0.1F;
+            float f2 = ((float) ((i >> 2) % 2) - 0.5F) * this.width * 0.8F;
+            int j = MathHelper.floor_double(this.posX + (double) f);
+            int k = MathHelper.floor_double(eyeY + (double) f1);
+            int l = MathHelper.floor_double(this.posZ + (double) f2);
+
+            if (this.worldObj.getBlock(j, k, l).isNormalCube()) {
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @SuppressWarnings("UnusedReturnValue")
     protected boolean updateEyesInWaterPlayer() {
 
