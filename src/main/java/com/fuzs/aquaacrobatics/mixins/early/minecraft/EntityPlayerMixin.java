@@ -13,7 +13,6 @@ import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.PlayerCapabilities;
-import net.minecraft.potion.Potion;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
@@ -181,6 +180,21 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
         } else {
             this.setSwimming(this.isSprinting() && this.canSwim() && !this.isRiding());
         }
+    }
+
+    /**
+     * 趴下（陆地泳姿）时禁止疾跑，与潜行一样不允许冲刺。
+     * 这里拦截所有启用路径（原版按键/双击 W、本 mod 自身的冲刺逻辑、其他 mod），
+     * 水中趴姿属于游泳冲刺，不受影响；趴下瞬间残留的疾跑状态由 {@link #updatePose()} 清除。
+     */
+    @Override
+    public void setSprinting(boolean sprinting) {
+
+        if (sprinting && this.getPose() == Pose.SWIMMING && !this.isInWater()) {
+
+            sprinting = false;
+        }
+        super.setSprinting(sprinting);
     }
 
     private void updateEyesInWater() {
@@ -512,10 +526,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
                     }
                 } else {
                     if (this.isPoseClear(Pose.STANDING)) {
-                        if (!this.worldObj.isRemote) {
-                            this.removePotionEffect(Potion.moveSlowdown.id);
-                            this.removePotionEffect(Potion.digSlowdown.id);
-                        }
+                        // 趴下的减速由输入层实现（与潜行相同的 0.3 倍限速），不再使用药水机制。
                         pose = Pose.STANDING;
                         if (this.worldObj.isRemote) {
                             this.yOffset = 1.62F;
@@ -535,6 +546,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
             }
 
             this.setPose(finalPose);
+
+            // 趴下瞬间可能残留疾跑状态（此时没有新的 setSprinting 调用可拦截），需要主动清除；
+            // 后续新一轮的疾跑启用会被 setSprinting 覆盖直接拦截。
+            if (finalPose == Pose.SWIMMING && !this.isInWater() && this.isSprinting()) {
+
+                this.setSprinting(false);
+            }
         }
     }
 
@@ -686,6 +704,14 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
                 this.updateLimbSwing();
             }
         } else {
+
+            // 趴下（泳姿/爬行，含按键强制与空间不足自动趴下）时采用与潜行相同的移动限速（0.3 倍）。
+            // 水中趴姿走游泳分支，不额外减速。
+            if (this.getPose() == Pose.SWIMMING && !this.isRiding()) {
+
+                strafe *= 0.3F;
+                forward *= 0.3F;
+            }
 
             super.moveEntityWithHeading(strafe, forward);
         }

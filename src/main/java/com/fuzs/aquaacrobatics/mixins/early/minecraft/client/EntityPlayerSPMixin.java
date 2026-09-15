@@ -273,7 +273,6 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer implement
     @Inject(method = "onLivingUpdate", at = @At(value = "TAIL"))
     public void onLivingUpdate(CallbackInfo callbackInfo) {
 
-        this.updatePlayerMoveState();
         this.isCrouching = this.isCrouching(!((IPlayerResizeable) this).isPoseClear(Pose.STANDING));
         // handle sprinting behaviour DEFENSIVELY!!!
         if (!BETTER_SPRINTING_LOADED ) { //&& !inWater
@@ -304,21 +303,6 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer implement
         // this.handleElytraTakeoff();
         this.handleWaterSneaking();
         this.slowDownSneakFlying();
-    }
-
-    private void updatePlayerMoveState() {
-
-        if (!this.movementInput.sneak && this.isForcedDown()) {
-
-            this.movementInput.moveStrafe = (float) ((double) this.movementInput.moveStrafe * 0.3);
-            this.movementInput.moveForward = (float) ((double) this.movementInput.moveForward * 0.3);
-        }
-
-        if (this.movementInput.sneak && !this.isForcedDown()) {
-
-            this.movementInput.moveStrafe = (float) ((double) this.movementInput.moveStrafe / 0.3);
-            this.movementInput.moveForward = (float) ((double) this.movementInput.moveForward / 0.3);
-        }
     }
 
     private boolean isCrouching(boolean cantStand) {

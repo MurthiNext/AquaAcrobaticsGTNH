@@ -3,7 +3,6 @@ package com.fuzs.aquaacrobatics.proxy;
 import com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.potion.Potion;
 import net.minecraftforge.common.MinecraftForge;
 
 import com.fuzs.aquaacrobatics.AquaAcrobatics;
@@ -22,27 +21,6 @@ import net.minecraftforge.event.entity.living.LivingEvent;
 
 @EventBusSubscriber
 public class CommonProxy {
-
-    //hopefully prevent crawl jumping (I don't think most people can do that to begin with)
-    //@SubscribeEvent
-    //public void onPlayerJump(LivingEvent.LivingJumpEvent event) {
-    //    if (event.entityLiving instanceof EntityPlayer) {
-    //        EntityPlayer player = (EntityPlayer) event.entityLiving;
-//
-    //        if (player instanceof IPlayerResizeable) {
-    //            IPlayerResizeable resizeable = (IPlayerResizeable) player;
-    //            if (resizeable.isForcingCrawling()) {
-    //                // cancel crawl if they jump
-    //                resizeable.setForcingCrawling(false);
-//
-    //                // remove debuffs too
-    //                player.removePotionEffect(Potion.moveSlowdown.id);
-    //                player.removePotionEffect(Potion.digSlowdown.id);
-    //            }
-    //        }
-    //    }
-    //}
-    //ok this is annoying
 
     private boolean needNetworking() {
         return ConfigHandler.MovementConfig.enableToggleCrawling;
@@ -88,11 +66,8 @@ public class CommonProxy {
             if (player instanceof IPlayerResizeable) {
                 IPlayerResizeable r = (IPlayerResizeable) player;
                 if (r.isForcingCrawling()) {
+                    // 跳跃会取消强制趴下状态，减速由输入层限速自行消失
                     r.setForcingCrawling(false);
-                    if (!player.worldObj.isRemote) {
-                        player.removePotionEffect(Potion.moveSlowdown.id);
-                        player.removePotionEffect(Potion.digSlowdown.id);
-                    }
                 }
             }
         }

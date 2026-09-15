@@ -1,6 +1,5 @@
 package com.fuzs.aquaacrobatics.network.message;
 
-import com.fuzs.aquaacrobatics.entity.Pose;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable;
@@ -9,10 +8,6 @@ import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionEffect;
-
-import static com.fuzs.aquaacrobatics.config.ConfigHandler.MovementConfig.effectsWhileCrawling;
 
 public class PacketSendKey implements IMessage {
 
@@ -63,33 +58,6 @@ public class PacketSendKey implements IMessage {
                 // flip crawl state
                 boolean newState = !resizeable.isForcingCrawling();
                 resizeable.setForcingCrawling(newState);
-
-                if (effectsWhileCrawling) {
-
-                    if (newState ) { //ENSURE WE ARE ACTUALLY CRAWLING, NOT JUST FORCING IT?
-                        //newState is the keybind. If it's true, then we are forcing crawl pose, which means we should apply debuffs.
-                        //ensure we are on server
-                        if (!playerEntity.worldObj.isRemote) {
-                            // Apply debuffs while crawling
-                            playerEntity.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, Integer.MAX_VALUE, 1, false)); // Slowness II
-                            playerEntity.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, Integer.MAX_VALUE, 0, false)); // Mining Fatigue I
-                        }
-                    } else {
-                        //if (resizeable.getPose() == Pose.STANDING) { //NEVER FIRES
-                        if (!playerEntity.worldObj.isRemote) { //ENSURE ITS ON SERVER
-                        if (resizeable.isPoseClear(Pose.STANDING)) {
-
-                            //IF THE POSE IS STANDING, THEN REMOVE DEBUFFS. THIS PREVENTS DEBUFFS FROM STICKING AROUND WHEN USING THE KEYBIND TO EXIT CRAWL POSE
-
-
-                                // Remove debuffs when not crawling
-                                playerEntity.removePotionEffect(Potion.moveSlowdown.id);
-                                playerEntity.removePotionEffect(Potion.digSlowdown.id);
-                            }
-                            //}
-                        }
-                    }
-                }
             }
 
             return null;
