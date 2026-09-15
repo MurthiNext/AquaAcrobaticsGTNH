@@ -547,6 +547,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
 
             this.setPose(finalPose);
 
+            // 客户端 yOffset 必须跟随最终趴姿（包含空间不足被动趴下，如活板门下方）：
+            // 若不同步更新，会出现碰撞箱与模型正常但相机仍停在站立高度的现象。
+            if (this.worldObj.isRemote && finalPose == Pose.SWIMMING) {
+
+                this.yOffset = 0.4F;
+            }
+
             // 趴下瞬间可能残留疾跑状态（此时没有新的 setSprinting 调用可拦截），需要主动清除；
             // 后续新一轮的疾跑启用会被 setSprinting 覆盖直接拦截。
             if (finalPose == Pose.SWIMMING && !this.isInWater() && this.isSprinting()) {
