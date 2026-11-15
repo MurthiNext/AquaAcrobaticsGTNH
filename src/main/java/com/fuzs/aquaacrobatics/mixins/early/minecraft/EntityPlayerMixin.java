@@ -547,21 +547,21 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
                     // 趴姿（游泳/爬行）的眼睛与相机高度：对齐 1.13 的泳姿眼睛（箱底上方 0.4）。
                     // 相机高度 = posY（见 EntityRendererMixin），水下视觉判定 = 箱底 + 0.4
                     // （见 isInsideOfMaterial），三者必须一致，否则贴水面时相机会没入水中。
-                    this.yOffset = 0.4F;
+                    this.setEyeOffset(0.4F);
                 }
             } else if (this.isActuallySneaking() && !this.capabilities.isFlying
                 && (this.onGround || !this.isInWater())
                 && !this.isOnLadder()) {
                     pose = Pose.CROUCHING;
                     if (this.worldObj.isRemote) {
-                        this.yOffset = 1.62F;
+                        this.setEyeOffset(1.62F);
                     }
                 } else {
                     if (this.isPoseClear(Pose.STANDING)) {
                         // 趴下的减速由输入层实现（与潜行相同的 0.3 倍限速），不再使用药水机制。
                         pose = Pose.STANDING;
                         if (this.worldObj.isRemote) {
-                            this.yOffset = 1.62F;
+                            this.setEyeOffset(1.62F);
                         }
                     }
                 }
@@ -583,7 +583,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
             // 若不同步更新，会出现碰撞箱与模型正常但相机仍停在站立高度的现象。
             if (this.worldObj.isRemote && finalPose == Pose.SWIMMING) {
 
-                this.yOffset = 0.4F;
+                this.setEyeOffset(0.4F);
             }
 
             // 趴下瞬间可能残留疾跑状态（此时没有新的 setSprinting 调用可拦截），需要主动清除；
@@ -593,6 +593,23 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements IPla
                 this.setSprinting(false);
             }
         }
+    }
+
+
+    /**
+     * 客户端改变眼睛高度（yOffset）时必须同时把 posY 挪到位。
+     * <p>
+     * 1.7.10 里 posY 是眼睛位置，碰撞箱底 = {@code posY - yOffset + ySize}。只改 yOffset 不改 posY，等于把整块
+     * 碰撞箱上下平移：{@link #updatePose()} 里紧接着做的 isPoseClear 检查量到的就不再是目标姿势实际占的位置。
+     * 最典型的后果是强制爬行关闭后：先选 STANDING 并把 yOffset 设成 1.62，箱子因此下沉 1.22 格扎进地板，检查
+     * 失败又退回 SWIMMING——每个 tick 都如此，玩家按爬行键永远站不起来（跳跃能站起来只是因为人在空中）。
+     * <p>
+     * 这里保持脚底不动、只改变眼睛相对脚底的高度。
+     */
+    private void setEyeOffset(float offset) {
+        double feet = this.posY - (double) this.yOffset + (double) this.ySize;
+        this.yOffset = offset;
+        this.posY = feet + (double) offset - (double) this.ySize;
     }
 
 
