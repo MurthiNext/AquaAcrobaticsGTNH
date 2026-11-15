@@ -48,7 +48,10 @@ public abstract class EntityItemMixin extends Entity {
         require = 0)
     private double applyFloatMotionIfInWater(EntityItem entityItem) {
         if (!aqua$shouldBeBuoyant()) {
-            return -0.03999999910593033D; // normal gravity
+            // Not buoyant: hand the current velocity back so vanilla's own `this.motionY -= 0.04` applies normal
+            // gravity. Returning the gravity constant here replaced the value being subtracted from, which made every
+            // item lose 0.08 per tick (double gravity, dropped items landed at roughly half the vanilla distance).
+            return entityItem.motionY;
         }
         double eyePosition = this.posY + (double) this.getEyeHeight();
         BlockPos eyeBlockPos = new BlockPos(this.posX, eyePosition, this.posZ);
